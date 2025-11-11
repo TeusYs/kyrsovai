@@ -1,0 +1,105 @@
+{% extends "applicant/layout.html" %}
+{% block title %}Верификация документов{% endblock %}
+
+{% block applicant_content %}
+<div class="verify-wrapper">
+
+    {% if status == 'no_docs' %}
+        <p class="warning-center">
+            Вы не подали документы или ваши документы не прошли проверку.
+        </p>
+    {% elif status == 'pending' %}
+        <p class="info-center">
+            Ваши документы находятся на проверке.
+        </p>
+    {% elif status == 'approved' %}
+        <p class="success-center">
+            Ваши документы подтверждены.
+        </p>
+    {% elif status == 'rejected' %}
+        <p class="warning-center">
+            Ваши документы были отклонены. Загрузите корректные документы.
+        </p>
+    {% endif %}
+
+    <h2 class="verify-title">Загрузите ваши документы</h2>
+
+    <form method="post" enctype="multipart/form-data" class="verify-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="form-group">
+            <label>{{ form.passport.label }}:</label>
+            {{ form.passport }} {{ form.passport.errors }}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.snils.label }}:</label>
+            {{ form.snils }} {{ form.snils.errors }}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.education.label }}:</label>
+            {{ form.education }} {{ form.education.errors }}
+        </div>
+
+        <div class="form-group">
+            <label><input type="checkbox" id="quota-toggle"> Квоты</label>
+        </div>
+        <div class="form-group" id="quota-block" style="display:none;">
+            {{ form.quota.label_tag }}
+            {{ form.quota }} {{ form.quota.errors }}
+        </div>
+
+        <div class="form-group">
+            <label><input type="checkbox" id="ach-toggle"> Достижения</label>
+        </div>
+        <div class="form-group" id="ach-block" style="display:none;">
+            {{ form.achievement.label_tag }}
+            {{ form.achievement }} {{ form.achievement.errors }}
+        </div>
+
+        <button type="submit" class="btn-primary">Отправить документы</button>
+    </form>
+
+    <h3>Мои загруженные документы</h3>
+    <table class="table-docs">
+        <tr>
+            <th>Тип</th>
+            <th>Файл</th>
+            <th>Статус</th>
+            <th>Дата</th>
+        </tr>
+        {% for d in docs %}
+        <tr>
+            <td>{{ d.get_doc_type_display }}</td>
+            <td><a href="{{ d.file.url }}" target="_blank">Открыть {{ d.file.name }}</a></td>
+            <td>{{ d.get_status_display }}</td>
+            <td>{{ d.uploaded_at }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">Документы ещё не загружены.</td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const quotaToggle = document.getElementById('quota-toggle');
+    const quotaBlock = document.getElementById('quota-block');
+    const achToggle = document.getElementById('ach-toggle');
+    const achBlock = document.getElementById('ach-block');
+
+    if (quotaToggle) {
+        quotaToggle.addEventListener('change', () => {
+            quotaBlock.style.display = quotaToggle.checked ? 'block' : 'none';
+        });
+    }
+    if (achToggle) {
+        achToggle.addEventListener('change', () => {
+            achBlock.style.display = achToggle.checked ? 'block' : 'none';
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Список: {{ program.nazv }}{% endblock %}
+
+{% block content %}
+<div class="content" style="width:100%">
+    <h2>{{ program.nazv }}</h2>
+    <p>
+        <strong>Код направления:</strong> {{ program.kod }}<br>
+        <strong>Срок обучения:</strong> {{ program.srok }} г.
+    </p>
+
+    <h3>Список абитуриентов</h3>
+    <table>
+        <tr>
+            <th>ФИО</th>
+            <th>Приоритет</th>
+            <th>Статус заявления</th>
+        </tr>
+        {% for l in lines %}
+        <tr>
+            <td>{{ l.id_abit.fam }} {{ l.id_abit.imya }} {{ l.id_abit.otch }}</td>
+            <td>{{ l.priorit }}</td>
+            <td>{{ l.id_aplic.status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">Пока нет поданных заявлений на это направление.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

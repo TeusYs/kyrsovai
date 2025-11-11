@@ -1,0 +1,11 @@
+{% extends "specialist/layout.html" %}
+{% block title %}Настройки специалиста{% endblock %}
+
+{% block specialist_content %}
+<h2>Настройки специалиста</h2>
+<p><strong>Логин:</strong> {{ user.username }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p>
+
+<p>Здесь может быть реализована смена пароля через стандартные формы Django
+(для отчёта можно описать, что используется встроенный механизм).</p>
+{% endblock %}

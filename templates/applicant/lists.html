@@ -1,0 +1,32 @@
+{% extends "applicant/layout.html" %}
+{% block title %}Все списки{% endblock %}
+
+{% block applicant_content %}
+<h2>Списки направлений</h2>
+<p>Здесь вы можете просмотреть все доступные направления подготовки и перейти к списку поданных заявлений по каждому из них.</p>
+
+<table>
+    <tr>
+        <th>Код</th>
+        <th>Направление</th>
+        <th>Срок обучения</th>
+        <th>Подробнее</th>
+    </tr>
+    {% for p in programs %}
+    <tr>
+        <td>{{ p.kod }}</td>
+        <td>{{ p.nazv }}</td>
+        <td>{{ p.srok }} г.</td>
+        <td>
+            <a href="{% url 'program_detail' p.id_prog %}">
+                Открыть список
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="4">Направления не найдены.</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

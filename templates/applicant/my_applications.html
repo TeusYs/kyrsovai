@@ -1,0 +1,64 @@
+{% extends "applicant/layout.html" %}
+{% block title %}Мои заявления{% endblock %}
+
+{% block applicant_content %}
+<h2>Мои заявления</h2>
+
+{% if not applicant %}
+    <p class="warning">
+        Профиль абитуриента не найден. Обратитесь в приёмную комиссию.
+    </p>
+{% else %}
+
+    {% if not verified %}
+        <p class="warning">
+            Вы не прошли верификацию. Загрузите документы в разделе «Верификация».
+        </p>
+    {% else %}
+        <p class="success">
+            Ваши документы подтверждены. Вы можете подавать заявления и отслеживать статусы.
+        </p>
+    {% endif %}
+
+    {% if applications %}
+        <table>
+            <tr>
+                <th>ID заявления</th>
+                <th>Дата</th>
+                <th>Статус</th>
+                <th>Направление</th>
+            </tr>
+
+            {% for app in applications %}
+                {% with lines=app.stroki_zayav_set.all %}
+                    {% if lines %}
+                        {% for line in lines %}
+                            <tr>
+                                <td>{{ app.id_aplic }}</td>
+                                <td>{{ app.data }}</td>
+                                <td>{{ app.status }}</td>
+                                <td>
+                                    <a href="{% url 'program_detail' line.id_prog.id_prog %}">
+                                        {{ line.id_prog.nazv }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        {# На всякий случай: заявление без строк — всё равно показываем #}
+                        <tr>
+                            <td>{{ app.id_aplic }}</td>
+                            <td>{{ app.data }}</td>
+                            <td>{{ app.status }}</td>
+                            <td>-</td>
+                        </tr>
+                    {% endif %}
+                {% endwith %}
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Вы ещё не подали ни одного заявления.</p>
+    {% endif %}
+
+{% endif %}
+{% endblock %}

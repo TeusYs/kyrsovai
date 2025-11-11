@@ -1,0 +1,26 @@
+{% extends "specialist/layout.html" %}
+{% block title %}Абитуриенты с неправильными документами{% endblock %}
+
+{% block specialist_content %}
+<h2>Абитуриенты с неправильными документами</h2>
+<p>Абитуриенты, у которых есть отклонённые документы.</p>
+
+<table>
+    <tr>
+        <th>ФИО</th>
+        <th>Email</th>
+    </tr>
+    {% for a in applicants %}
+    <tr>
+        <td>{{ a.fam }} {{ a.imya }} {{ a.otch }}</td>
+        <td>
+            <a href="{% url 'specialist_check_documents' a.id_abit %}">
+                {{ a.email }}
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="2">Нет абитуриентов с неправильными документами.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

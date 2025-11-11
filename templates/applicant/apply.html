@@ -1,0 +1,33 @@
+{% extends "applicant/layout.html" %}
+{% block title %}Подача заявления{% endblock %}
+
+{% block applicant_content %}
+<h2>Подача заявления</h2>
+
+<p>Заполните все поля формы. Ваше заявление будет отправлено на проверку приёмной комиссией.</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <label>Направление подготовки</label>
+    {{ form.program }} {{ form.program.errors }}
+
+    <label>Форма обучения</label>
+    {{ form.forma }} {{ form.forma.errors }}
+
+    <label>Тип обучения</label>
+    {{ form.fin }} {{ form.fin.errors }}
+
+    <label>Тип образования (основание приёма)</label>
+    {{ form.tip_obraz }} {{ form.tip_obraz.errors }}
+
+    <label>Приоритет</label>
+    {{ form.priorit }} {{ form.priorit.errors }}
+
+    <label>Комментарий к заявлению (необязательно)</label>
+    {{ form.description }} {{ form.description.errors }}
+
+    <button type="submit">Отправить заявление</button>
+</form>
+{% endblock %}

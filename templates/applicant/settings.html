@@ -1,0 +1,18 @@
+{% extends "applicant/layout.html" %}
+{% block title %}Настройки{% endblock %}
+
+{% block applicant_content %}
+<h2>Настройки профиля</h2>
+
+{% if applicant %}
+    <p><strong>ФИО:</strong> {{ applicant.fam }} {{ applicant.imya }} {{ applicant.otch }}</p>
+    <p><strong>Email (аккаунт):</strong> {{ user.email }}</p>
+    <p><strong>Телефон (из анкеты):</strong> {{ applicant.tel }}</p>
+{% else %}
+    <p class="warning">Профиль абитуриента не найден. Обратитесь в приёмную комиссию.</p>
+{% endif %}
+
+<h3>Смена пароля</h3>
+<p>Для учебного варианта можно описать смену пароля через стандартные средства Django
+(или через обращение в приёмную комиссию). В реальном проекте здесь размещается форма смены пароля.</p>
+{% endblock %}

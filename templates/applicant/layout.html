@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="sidebar">
+    <a href="{% url 'specialist_unverified' %}"
+       class="{% if menu_active == 'unverified' %}active{% endif %}">
+        Неподтвержденные
+    </a>
+    <a href="{% url 'specialist_verified' %}"
+       class="{% if menu_active == 'verified' %}active{% endif %}">
+        Подтвержденные
+    </a>
+    <a href="{% url 'specialist_settings' %}"
+       class="{% if menu_active == 'settings' %}active{% endif %}">
+        Настройки
+    </a>
+</div>
+
+<div class="content">
+    {% block specialist_content %}{% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Приёмная комиссия{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div>Система приёма документов</div>
+    <div>
+        {% if user.is_authenticated %}
+            {{ user.username }} |
+            <a href="{% url 'logout' %}">Выход</a>
+        {% else %}
+            <a href="{% url 'login' %}">Вход</a> |
+            <a href="{% url 'register' %}">Регистрация</a>
+        {% endif %}
+    </div>
+</header>
+<div class="layout">
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>
