@@ -218,3 +218,10 @@ class DocumentReviewForm(forms.Form):
         min_value=0,
         initial=0
     )
+class ApplicationStatusForm(forms.Form):
+    STATUS_CHOICES = [
+        ('на проверке', 'На проверке'),
+        ('принято', 'Принято'),
+        ('отклонено', 'Отклонено'),
+    ]
+    status = forms.ChoiceField(choices=STATUS_CHOICES, label='Статус заявления')

@@ -2,21 +2,37 @@
 
 {% block content %}
 <div class="sidebar">
-    <a href="{% url 'specialist_unverified' %}"
-       class="{% if menu_active == 'unverified' %}active{% endif %}">
-        Неподтвержденные
+    <div class="logo">
+        Система приёма документов
+    </div>
+
+    <a href="{% url 'applicant_my_applications' %}"
+       class="{% if menu_active == 'my_applications' %}active{% endif %}">
+        Мои заявления
     </a>
-    <a href="{% url 'specialist_verified' %}"
-       class="{% if menu_active == 'verified' %}active{% endif %}">
-        Подтвержденные
+
+    <a href="{% url 'applicant_apply' %}"
+       class="{% if menu_active == 'apply' %}active{% endif %}">
+        Подача заявления
     </a>
-    <a href="{% url 'specialist_settings' %}"
+
+    <a href="{% url 'applicant_verification' %}"
+       class="{% if menu_active == 'verification' %}active{% endif %}">
+        Верификация
+    </a>
+
+    <a href="{% url 'applicant_lists' %}"
+       class="{% if menu_active == 'lists' %}active{% endif %}">
+        Все списки
+    </a>
+
+    <a href="{% url 'applicant_settings' %}"
        class="{% if menu_active == 'settings' %}active{% endif %}">
         Настройки
     </a>
 </div>
 
 <div class="content">
-    {% block specialist_content %}{% endblock %}
+    {% block applicant_content %}{% endblock %}
 </div>
 {% endblock %}

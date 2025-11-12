@@ -164,7 +164,7 @@ class UploadedDocument(models.Model):
     file = models.FileField(upload_to='docs/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS, default='pending')
-
+    reason = models.TextField(blank=True)  # причина отклонения
     class Meta:
         db_table = 'uploaded_documents'
         managed = True

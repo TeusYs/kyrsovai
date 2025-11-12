@@ -1,10 +1,8 @@
 {% extends "specialist/layout.html" %}
-{% block title %}Проверка документов{% endblock %}
+{% block title %}Все документы{% endblock %}
 
 {% block specialist_content %}
-<h2>Проверка документов</h2>
-<p>Все загруженные документы абитуриентов. Для детальной проверки перейдите по email в списках.</p>
-
+<h2>Все загруженные документы</h2>
 <table>
     <tr>
         <th>ID</th>
@@ -13,24 +11,22 @@
         <th>Тип</th>
         <th>Файл</th>
         <th>Статус</th>
+        <th>Причина</th>
         <th>Дата</th>
     </tr>
     {% for d in docs %}
     <tr>
         <td>{{ d.id }}</td>
         <td>{{ d.applicant.fam }} {{ d.applicant.imya }} {{ d.applicant.otch }}</td>
-        <td>
-            <a href="{% url 'specialist_check_documents' d.applicant.id_abit %}">
-                {{ d.applicant.email }}
-            </a>
-        </td>
+        <td><a href="{% url 'specialist_check_documents' d.applicant.id_abit %}">{{ d.applicant.email }}</a></td>
         <td>{{ d.get_doc_type_display }}</td>
-        <td><a href="{{ d.file.url }}" target="_blank">Открыть {{ d.file.name }}</a></td>
+        <td><a href="{{ d.file.url }}" target="_blank">Открыть</a></td>
         <td>{{ d.get_status_display }}</td>
+        <td>{{ d.reason }}</td>
         <td>{{ d.uploaded_at }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="7">Документов нет.</td></tr>
+    <tr><td colspan="8">Документов нет.</td></tr>
     {% endfor %}
 </table>
 {% endblock %}

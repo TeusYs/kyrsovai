@@ -28,6 +28,7 @@ from .forms import (
     ApplicationForm,
     ApplicantVerificationForm,
     DocumentReviewForm,
+    ApplicationStatusForm,
 )
 
 # ===== DRF API =====
@@ -373,33 +374,38 @@ def specialist_documents(request):
 
 @specialist_required
 def specialist_check_documents(request, applicant_id):
-    """
-    Страница детальной проверки документов одного абитуриента.
-    Открывается по клику на email в списках.
-    """
     applicant = get_object_or_404(Applicant, pk=applicant_id)
-    docs = UploadedDocument.objects.filter(applicant=applicant)
+    docs = UploadedDocument.objects.filter(applicant=applicant).order_by('-uploaded_at')
 
     if request.method == 'POST':
-        form = DocumentReviewForm(request.POST)
         action = request.POST.get('action')
+
+        # Одобрить / отклонить ОДИН документ c указанием причины
+        if action in ('approve_doc', 'reject_doc'):
+            doc_id = request.POST.get('doc_id')
+            doc = get_object_or_404(UploadedDocument, pk=doc_id, applicant=applicant)
+
+            if action == 'approve_doc':
+                doc.status = 'approved'
+                doc.reason = ''
+            else:
+                doc.status = 'rejected'
+                doc.reason = request.POST.get('reason', '').strip()
+            doc.save()
+
+            return redirect('specialist_check_documents', applicant_id=applicant.id_abit)
+
+        # Сохранение общих полей (СНИЛС, паспорт и т.п.)
+        form = DocumentReviewForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-
             if cd.get('snils'):
                 applicant.snils = cd['snils']
             if cd.get('passport_series'):
                 applicant.pasp_ser = cd['passport_series']
             if cd.get('passport_number'):
                 applicant.pasp_num = cd['passport_number']
-            # extra_points можно сохранить в отдельное поле, если появится
             applicant.save()
-
-            if action == 'approve':
-                docs.update(status='approved')
-            elif action == 'reject':
-                docs.update(status='rejected')
-
             return redirect('specialist_check_documents', applicant_id=applicant.id_abit)
     else:
         form = DocumentReviewForm(initial={
@@ -417,6 +423,52 @@ def specialist_check_documents(request, applicant_id):
     })
 
 
+
+
+
+@specialist_required
+def specialist_applications(request):
+    """
+    Список всех заявлений с быстрым обзором статусов.
+    """
+    apps = (
+        Application.objects
+        .select_related('id_abit')
+        .order_by('-data', '-id_aplic')
+    )
+    return render(request, 'specialist/applications.html', {
+        'menu_active': 'applications',
+        'apps': apps,
+    })
+
+
+@specialist_required
+def specialist_application_detail(request, app_id):
+    """
+    Детальный просмотр заявления + смена статуса.
+    """
+    app = get_object_or_404(
+        Application.objects.select_related('id_abit'),
+        pk=app_id
+    )
+    lines = StrokiZayav.objects.filter(id_aplic=app).select_related('id_prog')
+
+    if request.method == 'POST':
+        form = ApplicationStatusForm(request.POST)
+        if form.is_valid():
+            app.status = form.cleaned_data['status']
+            app.save()
+            return redirect('specialist_application_detail', app_id=app.id_aplic)
+    else:
+        form = ApplicationStatusForm(initial={'status': app.status})
+
+    return render(request, 'specialist/application_detail.html', {
+        'menu_active': 'applications',
+        'app': app,
+        'lines': lines,
+        'form': form,
+    })
+    
 @specialist_required
 def specialist_settings(request):
     return render(request, 'specialist/settings.html', {

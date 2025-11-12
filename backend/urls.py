@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-
+from django.conf import settings
+from django.conf.urls.static import static
 from admissions.views import (
     ApplicantViewSet,
     ProgramViewSet,
@@ -26,6 +27,8 @@ from admissions.views import (
     specialist_invalid,
     specialist_documents,
     specialist_check_documents,
+    specialist_applications,
+    specialist_application_detail,
     specialist_settings,
 )
 
@@ -59,8 +62,12 @@ urlpatterns = [
     path('specialist/invalid/', specialist_invalid, name='specialist_invalid'),
     path('specialist/documents/', specialist_documents, name='specialist_documents'),
     path('specialist/documents/<int:applicant_id>/', specialist_check_documents, name='specialist_check_documents'),
+    path('specialist/applications/', specialist_applications, name='specialist_applications'),
+    path('specialist/applications/<int:app_id>/', specialist_application_detail, name='specialist_application_detail'),
     path('specialist/settings/', specialist_settings, name='specialist_settings'),
 
     # API
     path('api/', include(router.urls)),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,38 @@
+{% extends "specialist/layout.html" %}
+{% block title %}Заявление #{{ app.id_aplic }}{% endblock %}
+
+{% block specialist_content %}
+<h2>Заявление #{{ app.id_aplic }}</h2>
+<p>
+    <strong>Абитуриент:</strong> {{ app.id_abit.fam }} {{ app.id_abit.imya }} {{ app.id_abit.otch }}<br>
+    <strong>Email:</strong> {{ app.id_abit.email }}<br>
+    <strong>Дата:</strong> {{ app.data }}<br>
+    <strong>Текущий статус:</strong> {{ app.status }}
+</p>
+
+<h3>Направления в заявлении</h3>
+<table>
+    <tr>
+        <th>Направление</th>
+        <th>Приоритет</th>
+        <th>Основание</th>
+    </tr>
+    {% for line in lines %}
+    <tr>
+        <td>{{ line.id_prog.nazv }}</td>
+        <td>{{ line.priorit }}</td>
+        <td>{{ line.id_tip_obraz.id_tip_obraz }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">Нет строк заявления.</td></tr>
+    {% endfor %}
+</table>
+
+<h3>Изменить статус</h3>
+<form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.status.label_tag }} {{ form.status }}
+    <button type="submit">Сохранить</button>
+</form>
+{% endblock %}

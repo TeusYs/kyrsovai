@@ -2,24 +2,33 @@
 
 {% block content %}
 <div class="sidebar">
+    <div class="logo">
+        Система приёма документов
+    </div>
+
     <a href="{% url 'specialist_unverified' %}"
        class="{% if menu_active == 'unverified' %}active{% endif %}">
-        Неподтвержденные
+        Неподтверждённые абитуриенты
     </a>
 
     <a href="{% url 'specialist_verified' %}"
        class="{% if menu_active == 'verified' %}active{% endif %}">
-        Подтвержденные
+        Подтверждённые абитуриенты
     </a>
 
     <a href="{% url 'specialist_invalid' %}"
        class="{% if menu_active == 'invalid' %}active{% endif %}">
-        Неправильные документы
+        Абитуриенты с неправильными документами
     </a>
 
     <a href="{% url 'specialist_documents' %}"
        class="{% if menu_active == 'documents' %}active{% endif %}">
-        Проверка документов
+        Все документы
+    </a>
+
+    <a href="{% url 'specialist_applications' %}"
+       class="{% if menu_active == 'applications' %}active{% endif %}">
+        Статусы заявлений
     </a>
 
     <a href="{% url 'specialist_settings' %}"

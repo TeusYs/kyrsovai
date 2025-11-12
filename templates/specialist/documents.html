@@ -1,13 +1,11 @@
 {% extends "specialist/layout.html" %}
-{% block title %}Проверка документов абитуриента{% endblock %}
+{% block title %}Проверка документов{% endblock %}
 
 {% block specialist_content %}
-<h2>Проверка документов</h2>
+<h2>Проверка документов абитуриента</h2>
 
-<p>
-    <strong>{{ applicant.fam }} {{ applicant.imya }} {{ applicant.otch }}</strong><br>
-    Email: {{ applicant.email }}
-</p>
+<p><strong>{{ applicant.fam }} {{ applicant.imya }} {{ applicant.otch }}</strong><br>
+Email: {{ applicant.email }}</p>
 
 <h3>Загруженные документы</h3>
 <table>
@@ -15,43 +13,61 @@
         <th>Тип</th>
         <th>Файл</th>
         <th>Статус</th>
-        <th>Дата</th>
+        <th>Причина</th>
+        <th>Действия</th>
     </tr>
     {% for d in docs %}
     <tr>
         <td>{{ d.get_doc_type_display }}</td>
-        <td><a href="{{ d.file.url }}" target="_blank">Открыть {{ d.file.name }}</a></td>
+        <td><a href="{{ d.file.url }}" target="_blank">Открыть</a></td>
         <td>{{ d.get_status_display }}</td>
-        <td>{{ d.uploaded_at }}</td>
+        <td>{{ d.reason }}</td>
+        <td>
+            <form method="post" style="display:inline-block;">
+                {% csrf_token %}
+                <input type="hidden" name="doc_id" value="{{ d.id }}">
+                <input type="hidden" name="action" value="approve_doc">
+                <button type="submit">Одобрить</button>
+            </form>
+
+            <form method="post" style="display:inline-block; margin-top:4px;">
+                {% csrf_token %}
+                <input type="hidden" name="doc_id" value="{{ d.id }}">
+                <input type="hidden" name="action" value="reject_doc">
+                <select name="reason">
+                    <option value="Плохое качество">Плохое качество</option>
+                    <option value="Несовпадение данных">Несовпадение данных</option>
+                    <option value="Неверный тип документа">Неверный тип документа</option>
+                    <option value="Отсутствуют страницы">Отсутствуют страницы</option>
+                    <option value="Другое">Другое</option>
+                </select>
+                <button type="submit">Отклонить</button>
+            </form>
+        </td>
     </tr>
     {% empty %}
-    <tr><td colspan="4">Документы не загружены.</td></tr>
+    <tr><td colspan="5">Документы не загружены.</td></tr>
     {% endfor %}
 </table>
 
 <h3>Поля документов</h3>
-<form method="post">
+<form method="post" style="margin-top:15px;">
     {% csrf_token %}
     {{ form.non_field_errors }}
 
     <div class="form-group">
-        {{ form.snils.label_tag }}
-        {{ form.snils }}
+        {{ form.snils.label_tag }} {{ form.snils }}
     </div>
     <div class="form-group">
-        {{ form.passport_series.label_tag }}
-        {{ form.passport_series }}
+        {{ form.passport_series.label_tag }} {{ form.passport_series }}
     </div>
     <div class="form-group">
-        {{ form.passport_number.label_tag }}
-        {{ form.passport_number }}
+        {{ form.passport_number.label_tag }} {{ form.passport_number }}
     </div>
     <div class="form-group">
-        {{ form.extra_points.label_tag }}
-        {{ form.extra_points }}
+        {{ form.extra_points.label_tag }} {{ form.extra_points }}
     </div>
 
-    <button type="submit" name="action" value="approve" class="btn-success">Подтвердить</button>
-    <button type="submit" name="action" value="reject" class="btn-danger">Отклонить</button>
+    <button type="submit">Сохранить данные</button>
 </form>
 {% endblock %}
