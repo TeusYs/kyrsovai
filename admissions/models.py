@@ -1,55 +1,11 @@
 from django.db import models
 
-
-class SpecUslov(models.Model):
-    id_spec_uslov = models.AutoField(primary_key=True)
-    opisan = models.TextField()
-
-    class Meta:
-        db_table = 'spec_uslov'
-        managed = False
-
-
-class Lgot(models.Model):
-    id_lgot = models.AutoField(primary_key=True)
-    opisan_lg = models.TextField()
-
-    class Meta:
-        # таблица в БД создана как Lgot (с заглавной)
-        db_table = 'Lgot'
-        managed = False
-
-
-class TipObraz(models.Model):
-    id_tip_obraz = models.AutoField(primary_key=True)
-    tip_obr = models.CharField(max_length=10)
-
-    class Meta:
-        db_table = 'Tip_obraz'
-        managed = False
-    def __str__(self):
-        # подбери нужные подписи под свою предметку
-        return self.tip_obr 
-
-class Program(models.Model):
-    id_prog = models.AutoField(primary_key=True)
-    kod = models.CharField(max_length=20)
-    nazv = models.TextField()
-    srok = models.SmallIntegerField()
-
-    class Meta:
-        db_table = 'programs'
-        managed = False
-        
-    def __str__(self):
-        # то, что будет отображаться в выпадающем списке
-        return f"{self.kod} — {self.nazv}"
-
+# Таблица абитуриентов
 class Applicant(models.Model):
     id_abit = models.AutoField(primary_key=True)
     fam = models.CharField(max_length=50)
     imya = models.CharField(max_length=50)
-    otch = models.CharField(max_length=50, null=True, blank=True)
+    otch = models.CharField(max_length=50, blank=True, null=True)
     pol = models.CharField(max_length=1)
     dr = models.DateField()
     mr = models.TextField()
@@ -66,29 +22,33 @@ class Applicant(models.Model):
     sred_bal = models.FloatField()
     obshag = models.BooleanField()
     needs_spec = models.BooleanField()
-    id_spec_uslov = models.ForeignKey(
-        SpecUslov,
-        models.RESTRICT,
-        db_column='id_spec_uslov',
-        null=True,
-        blank=True
-    )
-    id_lgot = models.ForeignKey(
-        Lgot,
-        models.RESTRICT,
-        db_column='id_lgot',
-        null=True,
-        blank=True
-    )
+    id_spec_uslov = models.IntegerField(blank=True, null=True)
+    id_lgot = models.IntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'applicants'
-        managed = False
+        managed = False  # Не управляем этой таблицей
 
     def __str__(self):
         return f"{self.fam} {self.imya} {self.otch or ''}".strip()
 
-    
+
+# Направления подготовки
+class Program(models.Model):
+    id_prog = models.AutoField(primary_key=True)
+    kod = models.CharField(max_length=20)
+    nazv = models.TextField()
+    srok = models.SmallIntegerField()
+
+    class Meta:
+        db_table = 'programs'
+        managed = False  # Не управляем этой таблицей
+
+    def __str__(self):
+        return f"{self.kod} — {self.nazv}"
+
+
+# Достижения абитуриента
 class Achievement(models.Model):
     id_ach = models.AutoField(primary_key=True)
     tip = models.CharField(max_length=50)
@@ -97,74 +57,113 @@ class Achievement(models.Model):
 
     class Meta:
         db_table = 'achievements'
-        managed = False
+        managed = False  # Не управляем этой таблицей
 
 
+# Достижения абитуриента с привилегиями
 class ApplicantAchievement(models.Model):
-    id_ach_ab = models.AutoField(primary_key=True)
+    id_ach_ab = models.AutoField(primary_key=True)  # Устанавливаем id_ach_ab как PRIMARY KEY
     podtvr = models.BooleanField(default=False)
     fail = models.TextField()
     dobav = models.DateTimeField()
     god = models.IntegerField()
-    id_ach = models.ForeignKey(Achievement, models.CASCADE, db_column='id_ach')
-    id_abit = models.ForeignKey(Applicant, models.CASCADE, db_column='id_abit')
+    id_ach = models.ForeignKey(Achievement, db_column='id_ach', on_delete=models.CASCADE)
+    id_abit = models.ForeignKey(Applicant, db_column='id_abit', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'applicant_achievements'
-        managed = False
+        managed = False  # Не управляем этой таблицей
+        unique_together = ('id_ach_ab', 'id_ach', 'id_abit')
 
 
+# Заявления абитуриентов
 class Application(models.Model):
     id_aplic = models.AutoField(primary_key=True)
     data = models.DateField()
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, default='На проверке')  # Статус заявления
     reg_num = models.CharField(max_length=20)
-    forma = models.CharField(max_length=10)
-    fin = models.CharField(max_length=10)
-    id_abit = models.ForeignKey(Applicant, models.CASCADE, db_column='id_abit')
+    id_abit = models.ForeignKey(Applicant, db_column='id_abit', on_delete=models.CASCADE)
+    forma = models.CharField(max_length=20)
+    fin = models.CharField(max_length=20)
 
     class Meta:
         db_table = 'applications'
-        managed = False
-    def __str__(self):
-        return f"Заявление #{self.id_aplic} от {self.data} ({self.status})"
+        managed = False  # Не управляем этой таблицей
+        unique_together = ('id_aplic', 'id_abit')
 
+
+# Строки заявлений (все связанные данные, напр. тип образования)
 class StrokiZayav(models.Model):
-    stroki_id = models.AutoField(primary_key=True)
+    stroki_id = models.AutoField(primary_key=True)  # Устанавливаем stroki_id как PRIMARY KEY
     description = models.TextField()
     priorit = models.SmallIntegerField()
-    id_aplic = models.ForeignKey(Application, models.CASCADE, db_column='id_aplic')
-    id_tip_obraz = models.ForeignKey(TipObraz, models.CASCADE, db_column='id_tip_obraz')
-    id_abit = models.ForeignKey(Applicant, models.CASCADE, db_column='id_abit')
-    id_prog = models.ForeignKey(Program, models.CASCADE, db_column='id_prog')
+    id_aplic = models.ForeignKey(Application, db_column='id_aplic', on_delete=models.CASCADE)
+    id_tip_obraz = models.ForeignKey('TipObraz', db_column='id_tip_obraz', on_delete=models.RESTRICT)
+    id_abit = models.ForeignKey(Applicant, db_column='id_abit', on_delete=models.CASCADE)
+    id_prog = models.ForeignKey(Program, db_column='id_prog', on_delete=models.RESTRICT)
 
     class Meta:
         db_table = 'stroki_zayav'
-        managed = False
+        managed = False  # Не управляем этой таблицей
+        unique_together = ('stroki_id', 'id_aplic', 'id_tip_obraz', 'id_abit', 'id_prog')
 
 
-# ==== Дополнительные таблицы для web-функционала (управляются Django) ====
+# Типы образования
+class TipObraz(models.Model):
+    id_tip_obraz = models.AutoField(primary_key=True)
+    tip_obr = models.CharField(max_length=50)  # изменено с BooleanField на CharField
+
+    class Meta:
+        db_table = 'Tip_obraz'
+        managed = False  # Не управляем этой таблицей
 
 
+# Таблица для документов абитуриента (связываем их с заявлением)
 class UploadedDocument(models.Model):
     DOC_TYPES = [
-        ('main', 'Обязательный'),
+        ('passport', 'Паспорт'),
+        ('snils', 'СНИЛС'),
+        ('education', 'Документ об образовании'),
         ('quota', 'Квота'),
         ('achievement', 'Достижение'),
-        ('other', 'Дополнительный'),
     ]
-    STATUS = [
+
+    STATUS_TYPES = [
         ('pending', 'На проверке'),
-        ('approved', 'Подтвержден'),
-        ('rejected', 'Отклонен'),
+        ('approved', 'Подтверждён'),
+        ('rejected', 'Отклонён'),
     ]
 
     applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
     doc_type = models.CharField(max_length=20, choices=DOC_TYPES)
     file = models.FileField(upload_to='docs/')
+    status = models.CharField(max_length=20, choices=STATUS_TYPES, default='pending')
+    reason = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS, default='pending')
-    reason = models.TextField(blank=True)  # причина отклонения
+
     class Meta:
         db_table = 'uploaded_documents'
-        managed = True
+        managed = True  # Создаём миграцией, управляем только этой моделью
+
+    def __str__(self):
+        return f"{self.get_doc_type_display()} — {self.status}"
+
+
+# Таблица для Льгот
+class Lgot(models.Model):
+    id_lgot = models.AutoField(primary_key=True)
+    Opisan_lg = models.TextField()
+
+    class Meta:
+        db_table = 'Lgot'
+        managed = False  # Не управляем этой таблицей
+
+
+# Таблица для Специальных условий
+class SpecUslov(models.Model):
+    id_spec_uslov = models.AutoField(primary_key=True)
+    opisan = models.TextField()
+
+    class Meta:
+        db_table = 'spec_uslov'
+        managed = False  # Не управляем этой таблицей

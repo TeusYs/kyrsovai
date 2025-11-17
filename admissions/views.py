@@ -1,8 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User
-from django.db.models import Q
 
 from rest_framework import viewsets
 
@@ -31,7 +29,8 @@ from .forms import (
     ApplicationStatusForm,
 )
 
-# ===== DRF API =====
+
+# ===== DRF ViewSets (если нужно API) =====
 
 class ApplicantViewSet(viewsets.ModelViewSet):
     queryset = Applicant.objects.all()
@@ -63,12 +62,14 @@ class StrokiZayavViewSet(viewsets.ModelViewSet):
     serializer_class = StrokiZayavSerializer
 
 
-# ===== Хелперы ролей =====
+# ===== Хелперы =====
 
+# views.py
 def get_applicant_for_user(user):
     if not user.is_authenticated:
         return None
-    return Applicant.objects.filter(email=user.email).first()
+    return Applicant.objects.filter(email__iexact=user.email).first()
+
 
 
 def is_specialist(user):
@@ -78,13 +79,13 @@ def is_specialist(user):
 specialist_required = user_passes_test(is_specialist, login_url='login')
 
 
-# ===== Регистрация / Логин / Логаут =====
+# ===== Аутентификация =====
 
 def register_view(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            user, applicant = form.save()
+            user = form.save()
             login(request, user)
             if is_specialist(user):
                 return redirect('specialist_unverified')
@@ -101,18 +102,19 @@ def login_view(request):
         return redirect('applicant_my_applications')
 
     error = None
+
     if request.method == 'POST':
         role = request.POST.get('role', 'applicant')
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
 
         user = authenticate(request, username=username, password=password)
-
         if user is None:
             error = 'Неверный логин или пароль.'
         else:
+            # проверяем роль
             if role == 'specialist' and not is_specialist(user):
-                error = 'Эта учётная запись не является сотрудником приёмной комиссии.'
+                error = 'Эта учётная запись не является сотрудником.'
             elif role == 'applicant' and is_specialist(user):
                 error = 'Эта учётная запись относится к сотруднику. Выберите роль сотрудника.'
             else:
@@ -134,25 +136,30 @@ def logout_view(request):
 @login_required
 def applicant_my_applications(request):
     applicant = get_applicant_for_user(request.user)
+    applications = Application.objects.none()
+    docs_status = None
 
     if applicant:
         applications = (
             Application.objects
             .filter(id_abit=applicant)
-            .prefetch_related('stroki_zayav_set')
             .order_by('-data', '-id_aplic')
         )
         docs = UploadedDocument.objects.filter(applicant=applicant)
-        verified = docs.filter(status='approved').exists()
-    else:
-        applications = Application.objects.none()
-        verified = False
+        if not docs.exists():
+            docs_status = 'no_docs'
+        elif docs.filter(status='pending').exists():
+            docs_status = 'pending'
+        elif docs.filter(status='rejected').exists():
+            docs_status = 'rejected'
+        elif docs.filter(status='approved').exists():
+            docs_status = 'approved'
 
     return render(request, 'applicant/my_applications.html', {
         'menu_active': 'my_applications',
         'applicant': applicant,
         'applications': applications,
-        'verified': verified,
+        'docs_status': docs_status,
     })
 
 
@@ -161,15 +168,16 @@ def applicant_apply(request):
     applicant = get_applicant_for_user(request.user)
     if not applicant:
         return render(request, 'applicant/error.html', {
-            'message': 'Профиль абитуриента не найден.',
+            'message': 'Профиль абитуриента не найден. Обратитесь в приёмную комиссию.',
         })
 
-    docs_verified = UploadedDocument.objects.filter(
+    # Подавать заявление можно только если документы подтверждены
+    docs_ok = UploadedDocument.objects.filter(
         applicant=applicant,
         status='approved'
     ).exists()
 
-    if not docs_verified:
+    if not docs_ok:
         return render(request, 'applicant/apply_blocked.html', {
             'menu_active': 'apply',
             'applicant': applicant,
@@ -192,60 +200,51 @@ def applicant_apply(request):
 
 @login_required
 def applicant_verification(request):
-    """
-    Верификация:
-    - нет документов → "Вы не подали документы..."
-    - есть pending → "Ваши документы находятся на проверке."
-    - есть approved → "Ваши документы подтверждены."
-    - есть rejected и нет pending → "Ваши документы были отклонены."
-    """
     applicant = get_applicant_for_user(request.user)
     if not applicant:
         return render(request, 'applicant/error.html', {
-            'message': 'Профиль абитуриента не найден.',
+            'message': 'Профиль абитуриента не найден. Обратитесь в приёмную комиссию.',
         })
 
     if request.method == 'POST':
         form = ApplicantVerificationForm(request.POST, request.FILES)
         if form.is_valid():
             cd = form.cleaned_data
-
             if cd.get('passport'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
                     doc_type='passport',
                     file=cd['passport'],
-                    status='pending',
+                    status='pending'
                 )
             if cd.get('snils'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
                     doc_type='snils',
                     file=cd['snils'],
-                    status='pending',
+                    status='pending'
                 )
             if cd.get('education'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
                     doc_type='education',
                     file=cd['education'],
-                    status='pending',
+                    status='pending'
                 )
             if cd.get('quota'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
                     doc_type='quota',
                     file=cd['quota'],
-                    status='pending',
+                    status='pending'
                 )
             if cd.get('achievement'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
                     doc_type='achievement',
                     file=cd['achievement'],
-                    status='pending',
+                    status='pending'
                 )
-
             return redirect('applicant_verification')
     else:
         form = ApplicantVerificationForm()
@@ -256,10 +255,10 @@ def applicant_verification(request):
         status = 'no_docs'
     elif docs.filter(status='pending').exists():
         status = 'pending'
-    elif docs.filter(status='approved').exists():
-        status = 'approved'
     elif docs.filter(status='rejected').exists():
         status = 'rejected'
+    elif docs.filter(status='approved').exists():
+        status = 'approved'
     else:
         status = 'no_docs'
 
@@ -292,7 +291,7 @@ def applicant_settings(request):
 
 @login_required
 def program_detail(request, prog_id):
-    program = get_object_or_404(Program, id_prog=prog_id)
+    program = get_object_or_404(Program, pk=prog_id)
     lines = StrokiZayav.objects.filter(id_prog=program).select_related('id_abit', 'id_aplic')
     return render(request, 'applicant/program_detail.html', {
         'program': program,
@@ -304,10 +303,6 @@ def program_detail(request, prog_id):
 
 @specialist_required
 def specialist_unverified(request):
-    """
-    Неподтвержденные абитуриенты:
-    есть документы в статусе pending.
-    """
     applicants = (
         Applicant.objects
         .filter(uploadeddocument__status='pending')
@@ -319,12 +314,9 @@ def specialist_unverified(request):
         'applicants': applicants,
     })
 
+
 @specialist_required
 def specialist_verified(request):
-    """
-    Подтвержденные абитуриенты:
-    есть approved и нет pending/rejected.
-    """
     applicants = (
         Applicant.objects
         .filter(uploadeddocument__status='approved')
@@ -337,12 +329,9 @@ def specialist_verified(request):
         'applicants': applicants,
     })
 
+
 @specialist_required
 def specialist_invalid(request):
-    """
-    Абитуриенты с неправильными документами:
-    есть документы в статусе rejected.
-    """
     applicants = (
         Applicant.objects
         .filter(uploadeddocument__status='rejected')
@@ -357,11 +346,6 @@ def specialist_invalid(request):
 
 @specialist_required
 def specialist_documents(request):
-    """
-    Раздел «Проверка документов»:
-    общий список всех документов для первичного просмотра.
-    Из таблицы можно перейти к проверке конкретного абитуриента.
-    """
     docs = (
         UploadedDocument.objects
         .select_related('applicant')
@@ -372,6 +356,7 @@ def specialist_documents(request):
         'docs': docs,
     })
 
+
 @specialist_required
 def specialist_check_documents(request, applicant_id):
     applicant = get_object_or_404(Applicant, pk=applicant_id)
@@ -380,11 +365,8 @@ def specialist_check_documents(request, applicant_id):
     if request.method == 'POST':
         action = request.POST.get('action')
 
-        # Одобрить / отклонить ОДИН документ c указанием причины
         if action in ('approve_doc', 'reject_doc'):
-            doc_id = request.POST.get('doc_id')
-            doc = get_object_or_404(UploadedDocument, pk=doc_id, applicant=applicant)
-
+            doc = get_object_or_404(UploadedDocument, pk=request.POST.get('doc_id'), applicant=applicant)
             if action == 'approve_doc':
                 doc.status = 'approved'
                 doc.reason = ''
@@ -392,10 +374,8 @@ def specialist_check_documents(request, applicant_id):
                 doc.status = 'rejected'
                 doc.reason = request.POST.get('reason', '').strip()
             doc.save()
-
             return redirect('specialist_check_documents', applicant_id=applicant.id_abit)
 
-        # Сохранение общих полей (СНИЛС, паспорт и т.п.)
         form = DocumentReviewForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
@@ -423,14 +403,8 @@ def specialist_check_documents(request, applicant_id):
     })
 
 
-
-
-
 @specialist_required
 def specialist_applications(request):
-    """
-    Список всех заявлений с быстрым обзором статусов.
-    """
     apps = (
         Application.objects
         .select_related('id_abit')
@@ -444,14 +418,11 @@ def specialist_applications(request):
 
 @specialist_required
 def specialist_application_detail(request, app_id):
-    """
-    Детальный просмотр заявления + смена статуса.
-    """
     app = get_object_or_404(
         Application.objects.select_related('id_abit'),
         pk=app_id
     )
-    lines = StrokiZayav.objects.filter(id_aplic=app).select_related('id_prog')
+    lines = StrokiZayav.objects.filter(id_aplic=app).select_related('id_prog', 'id_tip_obraz')
 
     if request.method == 'POST':
         form = ApplicationStatusForm(request.POST)
@@ -468,7 +439,8 @@ def specialist_application_detail(request, app_id):
         'lines': lines,
         'form': form,
     })
-    
+
+
 @specialist_required
 def specialist_settings(request):
     return render(request, 'specialist/settings.html', {

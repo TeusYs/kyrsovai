@@ -5,7 +5,7 @@
 <div class="centered">
     <h2>Регистрация</h2>
 
-    <form method="post">
+    <form method="post" novalidate>
         {% csrf_token %}
         {{ form.non_field_errors }}
 
@@ -27,7 +27,7 @@
         {{ form.password2 }}
         {{ form.password2.errors }}
 
-        <div id="applicant-fields">
+        <fieldset id="applicant-fields" style="margin-top:12px;">
             <hr>
             <p><strong>Данные абитуриента</strong></p>
 
@@ -48,7 +48,7 @@
 
             <label>Дата рождения</label>
             {{ form.dr }} {{ form.dr.errors }}
-        </div>
+        </fieldset>
 
         <button type="submit">Зарегистрироваться</button>
     </form>
@@ -57,18 +57,28 @@
 </div>
 
 <script>
-    function toggleApplicantFields() {
-        const roleRadios = document.querySelectorAll('input[name="role"]');
-        const block = document.getElementById('applicant-fields');
-        let role = 'applicant';
-        roleRadios.forEach(r => { if (r.checked) role = r.value; });
-        block.style.display = (role === 'applicant') ? 'block' : 'none';
-    }
+document.addEventListener('DOMContentLoaded', function () {
+  const roleRadios = document.querySelectorAll('input[name="role"]');
+  const fs = document.getElementById('applicant-fields');
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const roleRadios = document.querySelectorAll('input[name="role"]');
-        roleRadios.forEach(r => r.addEventListener('change', toggleApplicantFields));
-        toggleApplicantFields();
+  function setEnabled(enable) {
+    // включаем/отключаем сам fieldset
+    fs.toggleAttribute('disabled', !enable);
+    // и КАЖДЫЙ вложенный элемент (на случай, если он отрендерился disabled)
+    fs.querySelectorAll('input, select, textarea, button').forEach(el => {
+      el.disabled = !enable;
     });
+    fs.style.opacity = enable ? '1' : '0.55';
+  }
+
+  function onChangeRole() {
+    const checked = document.querySelector('input[name="role"]:checked');
+    setEnabled(checked && checked.value === 'applicant');
+  }
+
+  // инициализация
+  onChangeRole();
+  roleRadios.forEach(r => r.addEventListener('change', onChangeRole));
+});
 </script>
 {% endblock %}

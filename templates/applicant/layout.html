@@ -2,36 +2,23 @@
 
 {% block content %}
 <div class="sidebar">
-    <div class="logo">
-        Система приёма документов
-    </div>
+    <div class="logo">Система приёма документов</div>
 
     <a href="{% url 'applicant_my_applications' %}"
-       class="{% if menu_active == 'my_applications' %}active{% endif %}">
-        Мои заявления
-    </a>
+       class="{% if menu_active == 'my_applications' %}active{% endif %}">Мои заявления</a>
 
     <a href="{% url 'applicant_apply' %}"
-       class="{% if menu_active == 'apply' %}active{% endif %}">
-        Подача заявления
-    </a>
+       class="{% if menu_active == 'apply' %}active{% endif %}">Подача заявления</a>
 
     <a href="{% url 'applicant_verification' %}"
-       class="{% if menu_active == 'verification' %}active{% endif %}">
-        Верификация
-    </a>
+       class="{% if menu_active == 'verification' %}active{% endif %}">Верификация</a>
 
     <a href="{% url 'applicant_lists' %}"
-       class="{% if menu_active == 'lists' %}active{% endif %}">
-        Все списки
-    </a>
+       class="{% if menu_active == 'lists' %}active{% endif %}">Все списки</a>
 
     <a href="{% url 'applicant_settings' %}"
-       class="{% if menu_active == 'settings' %}active{% endif %}">
-        Настройки
-    </a>
+       class="{% if menu_active == 'settings' %}active{% endif %}">Настройки</a>
 </div>
-
 <div class="content">
     {% block applicant_content %}{% endblock %}
 </div>
