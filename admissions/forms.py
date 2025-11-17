@@ -11,6 +11,7 @@ from .models import (
     Application,
     StrokiZayav,
     UploadedDocument,
+    ApplicationRequest,
 )
 
 
@@ -131,6 +132,7 @@ class ApplicationForm(forms.Form):
     )
 
     def save(self, applicant: Applicant) -> Application:
+        # создаём запись в applications
         app = Application.objects.create(
             data=timezone.now().date(),
             status='на проверке',  # строго по CHECK в БД
@@ -140,6 +142,7 @@ class ApplicationForm(forms.Form):
             fin=self.cleaned_data['fin'],
         )
 
+        # создаём строку заявления
         StrokiZayav.objects.create(
             description=self.cleaned_data.get('description') or 'Заявление',
             priorit=self.cleaned_data['priorit'],
@@ -147,6 +150,12 @@ class ApplicationForm(forms.Form):
             id_tip_obraz=self.cleaned_data['tip_obraz'],
             id_abit=applicant,
             id_prog=self.cleaned_data['program'],
+        )
+
+        # добавляем заявку в очередь на ФИСГИА
+        ApplicationRequest.objects.create(
+            application=app,
+            status='new',
         )
 
         return app

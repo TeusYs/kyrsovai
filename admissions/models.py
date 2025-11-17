@@ -167,3 +167,58 @@ class SpecUslov(models.Model):
     class Meta:
         db_table = 'spec_uslov'
         managed = False  # Не управляем этой таблицей
+
+# ===== Очередь на отправку в ФИСГИА =====
+
+class VerificationRequest(models.Model):
+    """
+    Заявка на проверку документов абитуриента в ФИСГИА.
+    Одна запись на абитуриента (если нужно — можно сделать несколько, но пока одной достаточно).
+    """
+    STATUS_CHOICES = [
+        ('new', 'Новая (ещё не выгружена в файл)'),
+        ('sent', 'Файл отправлен в ФИСГИА'),
+        ('accepted', 'Подтверждено ФИСГИА'),
+        ('rejected', 'Отклонено ФИСГИА'),
+    ]
+
+    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    message = models.TextField(blank=True)  # текст из ответа ФИСГИА (если есть)
+
+    class Meta:
+        db_table = 'verification_requests'
+        managed = True
+
+    def __str__(self):
+        return f"Верификация {self.applicant_id} — {self.status}"
+
+
+class ApplicationRequest(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новая (ещё не выгружена в файл)'),
+        ('sent', 'Файл отправлен в ФИСГИА'),
+        ('accepted', 'Принято ФИСГИА'),
+        ('rejected', 'Отклонено ФИСГИА'),
+    ]
+
+    application = models.ForeignKey(
+        Application,
+        db_column='id_aplic',
+        on_delete=models.CASCADE,
+        db_constraint=False,          # <--- вот это главное
+        related_name='fisgia_requests',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    message = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'application_requests'
+        managed = True
+
+    def __str__(self):
+        return f"Заявка {self.application_id} — {self.status}"

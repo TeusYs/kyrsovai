@@ -12,6 +12,8 @@ from .models import (
     Application,
     StrokiZayav,
     UploadedDocument,
+    VerificationRequest,      # <--- добавить
+    ApplicationRequest, 
 )
 from .serializers import (
     ApplicantSerializer,
@@ -210,6 +212,8 @@ def applicant_verification(request):
         form = ApplicantVerificationForm(request.POST, request.FILES)
         if form.is_valid():
             cd = form.cleaned_data
+            any_file = False
+
             if cd.get('passport'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
@@ -217,6 +221,7 @@ def applicant_verification(request):
                     file=cd['passport'],
                     status='pending'
                 )
+                any_file = True
             if cd.get('snils'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
@@ -224,6 +229,7 @@ def applicant_verification(request):
                     file=cd['snils'],
                     status='pending'
                 )
+                any_file = True
             if cd.get('education'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
@@ -231,6 +237,7 @@ def applicant_verification(request):
                     file=cd['education'],
                     status='pending'
                 )
+                any_file = True
             if cd.get('quota'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
@@ -238,6 +245,7 @@ def applicant_verification(request):
                     file=cd['quota'],
                     status='pending'
                 )
+                any_file = True
             if cd.get('achievement'):
                 UploadedDocument.objects.create(
                     applicant=applicant,
@@ -245,6 +253,15 @@ def applicant_verification(request):
                     file=cd['achievement'],
                     status='pending'
                 )
+                any_file = True
+
+            # если хотя бы один файл был загружен — ставим в очередь на ФИСГИА
+            if any_file:
+                VerificationRequest.objects.get_or_create(
+                    applicant=applicant,
+                    status='new',
+                )
+
             return redirect('applicant_verification')
     else:
         form = ApplicantVerificationForm()
