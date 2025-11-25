@@ -73,6 +73,48 @@ def get_applicant_for_user(user):
     return Applicant.objects.filter(email__iexact=user.email).first()
 
 
+def compute_verification_state(applicant):
+    """
+    Возвращает строку-состояние верификации для абитуриента.
+    Возможные значения:
+      - 'none'             — нет документов и нет заявки верификации
+      - 'awaiting_export'  — есть документы, но VerificationRequest.new
+      - 'awaiting_fisgia'  — VerificationRequest.sent
+      - 'fisgia_rejected'  — VerificationRequest.rejected
+      - 'awaiting_staff'   — ФИСГИА приняла, но сотрудник ещё не подтвердил
+      - 'verified'         — документы подтверждены сотрудником
+    """
+
+    docs = UploadedDocument.objects.filter(applicant=applicant)
+    has_docs = docs.exists()
+
+    vr = (VerificationRequest.objects
+          .filter(applicant=applicant)
+          .order_by('-created_at')
+          .first())
+
+    # если вообще ничего нет
+    if not has_docs and not vr:
+        return 'none'
+
+    # если есть документы, но ещё не создавали VerificationRequest (или он new)
+    if vr is None or vr.status == 'new':
+        return 'awaiting_export'
+
+    if vr.status == 'sent':
+        return 'awaiting_fisgia'
+
+    if vr.status == 'rejected':
+        return 'fisgia_rejected'
+
+    if vr.status == 'accepted':
+        # смотрим, подтвердил ли уже сотрудник документы
+        if docs.filter(status='approved').exists():
+            return 'verified'
+        else:
+            return 'awaiting_staff'
+
+    return 'none'
 
 def is_specialist(user):
     return user.is_authenticated and user.is_staff
@@ -138,31 +180,21 @@ def logout_view(request):
 @login_required
 def applicant_my_applications(request):
     applicant = get_applicant_for_user(request.user)
-    applications = Application.objects.none()
-    docs_status = None
+    if not applicant:
+        return render(request, 'applicant/no_profile.html')
 
-    if applicant:
-        applications = (
-            Application.objects
-            .filter(id_abit=applicant)
-            .order_by('-data', '-id_aplic')
-        )
-        docs = UploadedDocument.objects.filter(applicant=applicant)
-        if not docs.exists():
-            docs_status = 'no_docs'
-        elif docs.filter(status='pending').exists():
-            docs_status = 'pending'
-        elif docs.filter(status='rejected').exists():
-            docs_status = 'rejected'
-        elif docs.filter(status='approved').exists():
-            docs_status = 'approved'
+    applications = (Application.objects
+                    .filter(id_abit=applicant)
+                    .order_by('-data'))
+
+    verification_state = compute_verification_state(applicant)
 
     return render(request, 'applicant/my_applications.html', {
-        'menu_active': 'my_applications',
         'applicant': applicant,
         'applications': applications,
-        'docs_status': docs_status,
+        'verification_state': verification_state,
     })
+
 
 
 @login_required
