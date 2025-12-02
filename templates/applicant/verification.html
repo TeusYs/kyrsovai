@@ -62,23 +62,60 @@
         <button type="submit" class="btn-primary">Отправить документы</button>
     </form>
 
+    {% if current_rejected %}
+        <div style="margin-top: 15px; margin-bottom: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px;">
+            <p style="margin: 0 0 10px 0; font-size: 16px;"><strong>⚠️ Внимание! У вас есть отклонённые документы:</strong></p>
+            <ul style="margin: 0; padding-left: 20px;">
+                {% for d in current_rejected %}
+                    <li style="margin-bottom: 8px;">
+                        <strong>{{ d.get_doc_type_display }}</strong>
+                        {% if d.reason %}
+                            — <span style="color: #d32f2f;">{{ d.reason }}</span>
+                        {% else %}
+                            — <span style="color: #d32f2f;">Причина не указана</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <p style="margin: 10px 0 0 0; font-size: 14px;">Пожалуйста, загрузите исправленные документы в форме выше.</p>
+        </div>
+    {% endif %}
+
     <h3>Мои загруженные документы</h3>
     <table class="table-docs">
         <tr>
             <th>Тип</th>
             <th>Файл</th>
             <th>Статус</th>
+            <th>Причина отклонения</th>
             <th>Дата</th>
         </tr>
         {% for d in docs %}
-        <tr>
-            <td>{{ d.get_doc_type_display }}</td>
+        <tr {% if d.status == 'rejected' %}style="background-color: #ffe6e6;"{% elif d.status == 'approved' %}style="background-color: #e6ffe6;"{% endif %}>
+            <td><strong>{{ d.get_doc_type_display }}</strong></td>
             <td><a href="{{ d.file.url }}" target="_blank">Открыть {{ d.file.name }}</a></td>
-            <td>{{ d.get_status_display }}</td>
+            <td>
+                {% if d.status == 'rejected' %}
+                    <span style="color: #d32f2f; font-weight: bold;">{{ d.get_status_display }}</span>
+                {% elif d.status == 'approved' %}
+                    <span style="color: #2e7d32; font-weight: bold;">{{ d.get_status_display }}</span>
+                {% else %}
+                    {{ d.get_status_display }}
+                {% endif %}
+            </td>
+            <td>
+                {% if d.status == 'rejected' and d.reason %}
+                    <span style="color: #d32f2f; font-weight: bold;">{{ d.reason }}</span>
+                {% elif d.status == 'rejected' %}
+                    <span style="color: #d32f2f;">Причина не указана</span>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
             <td>{{ d.uploaded_at }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="4">Документы ещё не загружены.</td></tr>
+        <tr><td colspan="5">Документы ещё не загружены.</td></tr>
         {% endfor %}
     </table>
 </div>

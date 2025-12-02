@@ -117,6 +117,9 @@ class TipObraz(models.Model):
         db_table = 'Tip_obraz'
         managed = False  # Не управляем этой таблицей
 
+    def __str__(self):
+        return self.tip_obr
+
 
 # Таблица для документов абитуриента (связываем их с заявлением)
 class UploadedDocument(models.Model):

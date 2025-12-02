@@ -1,0 +1,156 @@
+{% extends "specialist/layout.html" %}
+{% block title %}Запросы{% endblock %}
+
+{% block specialist_content %}
+<h2>Запросы по абитуриентам</h2>
+
+<form method="post" style="margin-bottom: 30px;">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    
+    <fieldset style="margin-bottom: 20px;">
+        <legend>Выберите тип запроса:</legend>
+        {{ form.query_type }}
+        {{ form.query_type.errors }}
+    </fieldset>
+    
+    <div id="search-text-field" style="display:none; margin-bottom: 15px;">
+        <label>{{ form.search_text.label }}:</label>
+        {{ form.search_text }}
+        {{ form.search_text.errors }}
+        <small>{{ form.search_text.help_text }}</small>
+    </div>
+    
+    <div id="contact-search-field" style="display:none; margin-bottom: 15px;">
+        <label>{{ form.contact_search_text.label }}:</label>
+        {{ form.contact_search_text }}
+        {{ form.contact_search_text.errors }}
+        <small>{{ form.contact_search_text.help_text }}</small>
+    </div>
+    
+    <div id="period-fields" style="display:none; margin-bottom: 15px;">
+        <div style="margin-bottom: 10px;">
+            <label>{{ form.date_from.label }}:</label>
+            {{ form.date_from }}
+            {{ form.date_from.errors }}
+        </div>
+        <div>
+            <label>{{ form.date_to.label }}:</label>
+            {{ form.date_to }}
+            {{ form.date_to.errors }}
+        </div>
+    </div>
+    
+    <div id="program-field" style="display:none; margin-bottom: 15px;">
+        <label>{{ form.program.label }}:</label>
+        {{ form.program }}
+        {{ form.program.errors }}
+    </div>
+    
+    <button type="submit" style="padding: 10px 20px; background-color: #2196F3; color: white; border: none; cursor: pointer; border-radius: 4px;">
+        Выполнить запрос
+    </button>
+</form>
+
+{% if results is not None %}
+    <h3>Результаты запроса</h3>
+    {% if results %}
+        <p>Найдено: {{ results|length }} абитуриент(ов)</p>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>ФИО</th>
+                {% if query_type == 'contacts' %}
+                    <th>Телефон</th>
+                    <th>Email</th>
+                {% else %}
+                    <th>Email</th>
+                {% endif %}
+                {% if query_type == 'with_achievements' %}
+                    <th>Достижения</th>
+                {% endif %}
+                <th>Действия</th>
+            </tr>
+            {% for applicant in results %}
+                <tr>
+                    <td>{{ applicant.id_abit }}</td>
+                    <td>{{ applicant.fam }} {{ applicant.imya }} {{ applicant.otch|default:'' }}</td>
+                    {% if query_type == 'contacts' %}
+                        <td>{{ applicant.tel }}</td>
+                        <td>{{ applicant.email }}</td>
+                    {% else %}
+                        <td>{{ applicant.email }}</td>
+                    {% endif %}
+                    {% if query_type == 'with_achievements' %}
+                        <td>
+                            {% with achievements=applicant.applicantachievement_set.all %}
+                                {% if achievements %}
+                                    {% for ach in achievements %}
+                                        <div>{{ ach.id_ach.tip }}: {{ ach.id_ach.nazv }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+                            {% with achievement_docs=applicant.uploadeddocument_set.all %}
+                                {% for doc in achievement_docs %}
+                                    {% if doc.doc_type == 'achievement' %}
+                                        <div>Документ: {{ doc.get_doc_type_display }} ({{ doc.get_status_display }})</div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endwith %}
+                        </td>
+                    {% endif %}
+                    <td>
+                        <a href="{% url 'specialist_check_documents' applicant.id_abit %}">
+                            Просмотреть документы
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>По вашему запросу ничего не найдено.</p>
+    {% endif %}
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const queryTypeRadios = document.querySelectorAll('input[name="query_type"]');
+    const searchTextField = document.getElementById('search-text-field');
+    const periodFields = document.getElementById('period-fields');
+    const programField = document.getElementById('program-field');
+    
+    function toggleFields() {
+        const checked = document.querySelector('input[name="query_type"]:checked');
+        if (!checked) return;
+        
+        const value = checked.value;
+        const contactSearchField = document.getElementById('contact-search-field');
+        
+        // Скрываем все поля
+        searchTextField.style.display = 'none';
+        contactSearchField.style.display = 'none';
+        periodFields.style.display = 'none';
+        programField.style.display = 'none';
+        
+        // Показываем нужные поля
+        if (value === 'by_name') {
+            searchTextField.style.display = 'block';
+        } else if (value === 'contacts') {
+            contactSearchField.style.display = 'block';
+        } else if (value === 'by_period') {
+            periodFields.style.display = 'block';
+        } else if (value === 'by_program') {
+            programField.style.display = 'block';
+        }
+    }
+    
+    queryTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleFields);
+    });
+    
+    // Инициализация при загрузке
+    toggleFields();
+});
+</script>
+{% endblock %}
+

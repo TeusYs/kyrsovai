@@ -20,17 +20,18 @@
         </p>
     {% endif %}
 
-    {% if applications %}
+    {% if applications_with_lines %}
         <table>
             <tr>
                 <th>ID заявления</th>
                 <th>Дата</th>
                 <th>Статус</th>
                 <th>Направление</th>
+                <th>Действия</th>
             </tr>
 
-            {% for app in applications %}
-                {% with lines=app.stroki_zayav_set.all %}
+            {% for item in applications_with_lines %}
+                {% with app=item.application lines=item.lines %}
                     {% if lines %}
                         {% for line in lines %}
                             <tr>
@@ -42,6 +43,16 @@
                                         {{ line.id_prog.nazv }}
                                     </a>
                                 </td>
+                                <td>
+                                    <form method="post" style="display:inline;" onsubmit="return confirm('Вы уверены, что хотите отозвать это заявление? Это действие нельзя отменить.');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="app_id" value="{{ app.id_aplic }}">
+                                        <input type="hidden" name="delete_application" value="1">
+                                        <button type="submit" style="background-color: #d32f2f; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">
+                                            Отозвать
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                         {% endfor %}
                     {% else %}
@@ -51,6 +62,16 @@
                             <td>{{ app.data }}</td>
                             <td>{{ app.status }}</td>
                             <td>-</td>
+                            <td>
+                                <form method="post" style="display:inline;" onsubmit="return confirm('Вы уверены, что хотите отозвать это заявление? Это действие нельзя отменить.');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="app_id" value="{{ app.id_aplic }}">
+                                    <input type="hidden" name="delete_application" value="1">
+                                    <button type="submit" style="background-color: #d32f2f; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;">
+                                        Отозвать
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                     {% endif %}
                 {% endwith %}

@@ -29,6 +29,7 @@ from admissions.views import (
     specialist_applications,
     specialist_application_detail,
     specialist_settings,
+    specialist_queries,
 )
 
 from django.conf import settings
@@ -65,7 +66,9 @@ urlpatterns = [
     path('specialist/documents/', specialist_documents, name='specialist_documents'),
     path('specialist/documents/<int:applicant_id>/', specialist_check_documents, name='specialist_check_documents'),
     path('specialist/applications/', specialist_applications, name='specialist_applications'),
-    path('specialist/applications/<int:app_id>/', specialist_application_detail, name='specialist_application_detail'),
+    path('specialist/applications/<int:prog_id>/', specialist_applications, name='specialist_applications_by_program'),
+    path('specialist/applications/detail/<int:app_id>/', specialist_application_detail, name='specialist_application_detail'),
+    path('specialist/queries/', specialist_queries, name='specialist_queries'),
     path('specialist/settings/', specialist_settings, name='specialist_settings'),
 
     # API

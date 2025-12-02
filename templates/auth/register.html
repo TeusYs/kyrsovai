@@ -27,7 +27,7 @@
         {{ form.password2 }}
         {{ form.password2.errors }}
 
-        <fieldset id="applicant-fields" style="margin-top:12px;">
+        <fieldset id="applicant-fields" style="display:none; margin-top:12px;">
             <hr>
             <p><strong>Данные абитуриента</strong></p>
 
@@ -62,13 +62,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const fs = document.getElementById('applicant-fields');
 
   function setEnabled(enable) {
-    // включаем/отключаем сам fieldset
-    fs.toggleAttribute('disabled', !enable);
-    // и КАЖДЫЙ вложенный элемент (на случай, если он отрендерился disabled)
+    // показываем/скрываем fieldset
+    fs.style.display = enable ? 'block' : 'none';
+    // включаем/отключаем вложенные элементы
     fs.querySelectorAll('input, select, textarea, button').forEach(el => {
       el.disabled = !enable;
     });
-    fs.style.opacity = enable ? '1' : '0.55';
   }
 
   function onChangeRole() {

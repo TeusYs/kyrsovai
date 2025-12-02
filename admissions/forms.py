@@ -38,22 +38,19 @@ class UserRegisterForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
-        email = cleaned.get('email')
-        if email and User.objects.filter(username=email).exists():
-            self.add_error('email', 'Пользователь с таким email уже существует.')
         if cleaned.get('password1') != cleaned.get('password2'):
-            self.add_error('password2', 'Пароли не совпадают.')
+            raise forms.ValidationError('Пароли не совпадают.')
         return cleaned
+
 
     def save(self):
         data = self.cleaned_data
-
-        # 1) создаём пользователя
         user = User.objects.create_user(
             username=data['email'],
             email=data['email'],
-            password=data['password1'],
+            password=data['password1']
         )
+
         if data['role'] == 'specialist':
             user.is_staff = True
             user.save()
@@ -107,18 +104,17 @@ class ApplicationForm(forms.Form):
     )
     forma = forms.ChoiceField(
         label='Форма обучения',
-        choices=[('очная', 'Очная'), ('заочная', 'Заочная')],
         required=True,
     )
     fin = forms.ChoiceField(
         label='Тип обучения',
-        choices=[('бюджет', 'Бюджет'), ('контракт', 'Контракт')],
         required=True,
     )
     tip_obraz = forms.ModelChoiceField(
         queryset=TipObraz.objects.all(),
         label='Тип образования (основание приёма)',
         required=True,
+        to_field_name='id_tip_obraz',
     )
     priorit = forms.IntegerField(
         label='Приоритет',
@@ -130,6 +126,26 @@ class ApplicationForm(forms.Form):
         widget=forms.Textarea(attrs={'rows': 3}),
         required=False,
     )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Получаем уникальные значения формы обучения из БД
+        forma_choices = Application.objects.values_list('forma', flat=True).distinct()
+        if forma_choices:
+            # Преобразуем в список кортежей для ChoiceField
+            self.fields['forma'].choices = [(val, val) for val in forma_choices if val]
+        else:
+            # Если в БД нет значений, используем значения по умолчанию
+            self.fields['forma'].choices = [('очная', 'Очная'), ('заочная', 'Заочная')]
+        
+        # Получаем уникальные значения типа обучения из БД
+        fin_choices = Application.objects.values_list('fin', flat=True).distinct()
+        if fin_choices:
+            # Преобразуем в список кортежей для ChoiceField
+            self.fields['fin'].choices = [(val, val) for val in fin_choices if val]
+        else:
+            # Если в БД нет значений, используем значения по умолчанию
+            self.fields['fin'].choices = [('бюджет', 'Бюджет'), ('контракт', 'Контракт')]
 
     def save(self, applicant: Applicant) -> Application:
         # создаём запись в applications
@@ -209,3 +225,78 @@ class ApplicationStatusForm(forms.Form):
         ('отклонено', 'Отклонено'),
     ]
     status = forms.ChoiceField(choices=STATUS_CHOICES, label='Статус заявления')
+
+
+# ===== Запросы для специалиста =====
+
+class ApplicantSearchForm(forms.Form):
+    QUERY_TYPE_CHOICES = [
+        ('all', 'Все абитуриенты, подавшие документы'),
+        ('by_name', 'Поиск по ФИО/ID'),
+        ('contacts', 'Контактные данные абитуриента'),
+        ('by_period', 'По периоду подачи документов'),
+        ('by_program', 'По специальности/направлению'),
+        ('with_achievements', 'С достижениями (ГТО, волонтёрство)'),
+    ]
+    
+    query_type = forms.ChoiceField(
+        choices=QUERY_TYPE_CHOICES,
+        label='Тип запроса',
+        required=True,
+        widget=forms.RadioSelect
+    )
+    
+    # Поля для поиска по ФИО/ID
+    search_text = forms.CharField(
+        label='ФИО или ID',
+        required=False,
+        help_text='Введите ФИО или ID абитуриента'
+    )
+    
+    # Поле для поиска контактных данных конкретного абитуриента
+    contact_search_text = forms.CharField(
+        label='ФИО или ID абитуриента',
+        required=False,
+        help_text='Введите ФИО или ID абитуриента для получения контактных данных'
+    )
+    
+    # Поля для поиска по периоду
+    date_from = forms.DateField(
+        label='Дата начала',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    date_to = forms.DateField(
+        label='Дата окончания',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    
+    # Поле для поиска по специальности
+    program = forms.ModelChoiceField(
+        queryset=Program.objects.all(),
+        label='Направление подготовки',
+        required=False
+    )
+    
+    def clean(self):
+        cleaned = super().clean()
+        query_type = cleaned.get('query_type')
+        
+        if query_type == 'by_name' and not cleaned.get('search_text'):
+            raise forms.ValidationError('Для поиска по ФИО/ID необходимо указать значение.')
+        
+        if query_type == 'contacts' and not cleaned.get('contact_search_text'):
+            raise forms.ValidationError('Для получения контактных данных необходимо указать ФИО или ID абитуриента.')
+        
+        if query_type == 'by_period':
+            if not cleaned.get('date_from') or not cleaned.get('date_to'):
+                raise forms.ValidationError('Для поиска по периоду необходимо указать обе даты.')
+            if cleaned.get('date_from') and cleaned.get('date_to'):
+                if cleaned['date_from'] > cleaned['date_to']:
+                    raise forms.ValidationError('Дата начала не может быть позже даты окончания.')
+        
+        if query_type == 'by_program' and not cleaned.get('program'):
+            raise forms.ValidationError('Для поиска по специальности необходимо выбрать направление.')
+        
+        return cleaned

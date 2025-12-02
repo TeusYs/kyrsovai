@@ -1,0 +1,31 @@
+{% extends "specialist/layout.html" %}
+{% block title %}Заявления по направлениям{% endblock %}
+
+{% block specialist_content %}
+<h2>Заявления по направлениям</h2>
+<p>Выберите направление для просмотра заявлений:</p>
+
+<table>
+    <tr>
+        <th>Код</th>
+        <th>Направление</th>
+        <th>Срок обучения</th>
+        <th></th>
+    </tr>
+    {% for program in programs %}
+    <tr>
+        <td>{{ program.kod }}</td>
+        <td>{{ program.nazv }}</td>
+        <td>{{ program.srok }} г.</td>
+        <td>
+            <a href="{% url 'specialist_applications_by_program' program.id_prog %}">
+                Просмотреть заявления
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Нет направлений с заявлениями.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}
+

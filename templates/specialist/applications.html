@@ -1,32 +1,46 @@
 {% extends "specialist/layout.html" %}
-{% block title %}Статусы заявлений{% endblock %}
+{% block title %}Заявления: {{ program.nazv }}{% endblock %}
 
 {% block specialist_content %}
-<h2>Статусы заявлений</h2>
+<h2>Заявления по направлению: {{ program.nazv }}</h2>
+<p><a href="{% url 'specialist_applications' %}">← Вернуться к списку направлений</a></p>
+
 <table>
     <tr>
         <th>ID</th>
         <th>Дата</th>
         <th>Абитуриент</th>
         <th>Email</th>
+        <th>Приоритет</th>
         <th>Статус</th>
         <th></th>
     </tr>
-    {% for app in apps %}
-    <tr>
-        <td>{{ app.id_aplic }}</td>
-        <td>{{ app.data }}</td>
-        <td>{{ app.id_abit.fam }} {{ app.id_abit.imya }} {{ app.id_abit.otch }}</td>
-        <td>{{ app.id_abit.email }}</td>
-        <td>{{ app.status }}</td>
-        <td>
-            <a href="{% url 'specialist_application_detail' app.id_aplic %}">
-                Открыть
-            </a>
-        </td>
-    </tr>
+    {% for item in apps_list %}
+        {% with app=item.application lines=item.lines %}
+            {% for line in lines %}
+                <tr {% if app.status == 'на проверке' %}style="background-color: #fff3cd;"{% endif %}>
+                    <td>{{ app.id_aplic }}</td>
+                    <td>{{ app.data }}</td>
+                    <td>{{ app.id_abit.fam }} {{ app.id_abit.imya }} {{ app.id_abit.otch }}</td>
+                    <td>{{ app.id_abit.email }}</td>
+                    <td>{{ line.priorit }}</td>
+                    <td>
+                        {% if app.status == 'на проверке' %}
+                            <strong style="color: #ff9800;">{{ app.status }}</strong>
+                        {% else %}
+                            {{ app.status }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'specialist_application_detail' app.id_aplic %}">
+                            Открыть
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+        {% endwith %}
     {% empty %}
-    <tr><td colspan="6">Заявлений нет.</td></tr>
+    <tr><td colspan="7">Заявлений по этому направлению нет.</td></tr>
     {% endfor %}
 </table>
 {% endblock %}
