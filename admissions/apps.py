@@ -8,5 +8,6 @@ class AdmissionsConfig(AppConfig):
     def ready(self):
         # Запускаем только в основном процессе
         if os.environ.get('RUN_MAIN') == 'true':
-            from .auto_export import start_auto_export
+            from .auto_export import start_auto_export, start_auto_import
             start_auto_export()
+            start_auto_import()

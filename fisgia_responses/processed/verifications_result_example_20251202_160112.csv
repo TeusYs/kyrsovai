@@ -1,0 +1,5 @@
+id_abit;result;comment;snils;pasp_ser;pasp_num
+8;accepted;ОК;123-456-789 01;1234;567890
+11;accepted;Данные проверены;987-654-321 02;5678;123456
+12;rejected;Неверный формат СНИЛС;;;
+
